@@ -24,102 +24,95 @@ public class SampleSpeechWithMic {
 
 	public static void streamingMicRecognize() throws Exception {
 
-		  ResponseObserver<StreamingRecognizeResponse> responseObserver = null;
-		  
-		  try (SpeechClient client = SpeechClient.create()) {
+		ResponseObserver<StreamingRecognizeResponse> responseObserver = null;
 
-		    responseObserver =
-		        new ResponseObserver<StreamingRecognizeResponse>() {
-		          ArrayList<StreamingRecognizeResponse> responses = new ArrayList<>();
+		try (SpeechClient client = SpeechClient.create()) {
 
-		          public void onStart(StreamController controller) {}
+			responseObserver = new ResponseObserver<StreamingRecognizeResponse>() {
+				ArrayList<StreamingRecognizeResponse> responses = new ArrayList<>();
 
-		          public void onResponse(StreamingRecognizeResponse response) {
-		            responses.add(response);
-		          }
+				public void onStart(StreamController controller) {
+				}
 
-		          public void onComplete() {
-		        	  ssmlConversion conv = new ssmlConversion();
-		            for (StreamingRecognizeResponse response : responses) {
-		              StreamingRecognitionResult result = response.getResultsList().get(0);
-		              SpeechRecognitionAlternative alternative = result.getAlternativesList().get(0);
-		              System.out.printf("Transcript : %s\n", alternative.getTranscript());
-		              String transcript= alternative.getTranscript();
-		              try {
-						conv.basic(transcript);
-					  } catch (Exception e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					  }
-		            }
-		          }
+				public void onResponse(StreamingRecognizeResponse response) {
+					responses.add(response);
+				}
 
-		          public void onError(Throwable t) {
-		            System.out.println(t);
-		          }
-		        };
+				public void onComplete() {
+					ssmlConversion conv = new ssmlConversion();
+					for (StreamingRecognizeResponse response : responses) {
+						StreamingRecognitionResult result = response.getResultsList().get(0);
+						SpeechRecognitionAlternative alternative = result.getAlternativesList().get(0);
+						System.out.printf("Transcript : %s\n", alternative.getTranscript());
+						String transcript = alternative.getTranscript();
+						try {
+							conv.basic(transcript);
+						} catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				}
 
-		    ClientStream<StreamingRecognizeRequest> clientStream =
-		        client.streamingRecognizeCallable().splitCall(responseObserver);
+				public void onError(Throwable t) {
+					System.out.println(t);
+				}
+			};
 
-		    RecognitionConfig recognitionConfig =
-		        RecognitionConfig.newBuilder()
-		            .setEncoding(RecognitionConfig.AudioEncoding.LINEAR16)
-		            .setLanguageCode("en-US")
-		            .setSampleRateHertz(16000)
-		            .build();
-		    
-		    StreamingRecognitionConfig streamingRecognitionConfig =
-		        StreamingRecognitionConfig.newBuilder().setConfig(recognitionConfig).build();
+			ClientStream<StreamingRecognizeRequest> clientStream = client.streamingRecognizeCallable()
+					.splitCall(responseObserver);
 
-		    StreamingRecognizeRequest request =
-		        StreamingRecognizeRequest.newBuilder()
-		            .setStreamingConfig(streamingRecognitionConfig)
-		            .build(); // The first request in a streaming call has to be a config
+			RecognitionConfig recognitionConfig = RecognitionConfig.newBuilder()
+					.setEncoding(RecognitionConfig.AudioEncoding.LINEAR16).setLanguageCode("en-US")
+					.setSampleRateHertz(16000).build();
 
-		    clientStream.send(request);
-		    // SampleRate:16000Hz, SampleSizeInBits: 16, Number of channels: 1, Signed: true,
-		    // bigEndian: false
-		    AudioFormat audioFormat = new AudioFormat(16000, 16, 1, true, false);
-		    DataLine.Info targetInfo =
-		        new Info(
-		            TargetDataLine.class,
-		            audioFormat); // Set the system information to read from the microphone audio stream
+			StreamingRecognitionConfig streamingRecognitionConfig = StreamingRecognitionConfig.newBuilder()
+					.setConfig(recognitionConfig).build();
 
-		    if (!AudioSystem.isLineSupported(targetInfo)) {
-		      System.out.println("Microphone not supported");
-		      System.exit(0);
-		    }
-		    // Target data line captures the audio stream the microphone produces.
-		    TargetDataLine targetDataLine = (TargetDataLine) AudioSystem.getLine(targetInfo);
-		    targetDataLine.open(audioFormat);
-		    targetDataLine.start();
-		    System.out.println("Start speaking");
-		    long startTime = System.currentTimeMillis();
-		    // Audio Input Stream
-		    AudioInputStream audio = new AudioInputStream(targetDataLine);
-		    while (true) {
-		      long estimatedTime = System.currentTimeMillis() - startTime;
-		      byte[] data = new byte[128];
-		      audio.read(data);
-		      if (estimatedTime > 7000) { // 60 seconds
-		        System.out.println("Stop speaking.");
-		        targetDataLine.stop();
-		        targetDataLine.close();
-		        break;
-		      }
-		      request =
-		          StreamingRecognizeRequest.newBuilder()
-		              .setAudioContent(ByteString.copyFrom(data))
-		              .build();
-		      clientStream.send(request);
-		    }
-		    responseObserver.onComplete();
-		    
-		  } catch (Exception e) {
-		    System.out.println(e);
-		  }
-		  
+			StreamingRecognizeRequest request = StreamingRecognizeRequest.newBuilder()
+					.setStreamingConfig(streamingRecognitionConfig).build(); // The first request in a streaming call
+																				// has to be a config
+
+			clientStream.send(request);
+			// SampleRate:16000Hz, SampleSizeInBits: 16, Number of channels: 1, Signed:
+			// true,
+			// bigEndian: false
+			AudioFormat audioFormat = new AudioFormat(16000, 16, 1, true, false);
+			DataLine.Info targetInfo = new Info(TargetDataLine.class, audioFormat); // Set the system information to
+																					// read from the microphone audio
+																					// stream
+
+			if (!AudioSystem.isLineSupported(targetInfo)) {
+				System.out.println("Microphone not supported");
+				System.exit(0);
+			}
+			// Target data line captures the audio stream the microphone produces.
+			TargetDataLine targetDataLine = (TargetDataLine) AudioSystem.getLine(targetInfo);
+			targetDataLine.open(audioFormat);
+			targetDataLine.start();
+			System.out.println("Start speaking");
+			long startTime = System.currentTimeMillis();
+			// Audio Input Stream
+			AudioInputStream audio = new AudioInputStream(targetDataLine);
+			while (true) {
+				long estimatedTime = System.currentTimeMillis() - startTime;
+				byte[] data = new byte[128];
+				audio.read(data);
+				if (estimatedTime > 7000) { // 60 seconds
+					System.out.println("Stop speaking.");
+					targetDataLine.stop();
+					targetDataLine.close();
+					break;
+				}
+				request = StreamingRecognizeRequest.newBuilder().setAudioContent(ByteString.copyFrom(data)).build();
+				clientStream.send(request);
+			}
+			responseObserver.onComplete();
+
+		} catch (Exception e) {
+			System.out.println(e);
 		}
+
+	}
 
 }
