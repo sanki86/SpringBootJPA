@@ -7,6 +7,6 @@
 <title>Example Spring Boot </title>
 </head>
 <body>
-I like Spring
+I like Spring.Welcome to ${person.id}, ${person.name}, ${person.country}
 </body>
 </html>
