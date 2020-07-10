@@ -9,10 +9,16 @@
 <body>
 <form action="addMember">
 
-ID:<input type="id" name="id"><br>
-Name:<input type="name" name="name"><br>
-Country:<input type="country" name="country"><br>
+ID:<input type="text" name="id"><br>
+Name:<input type="text" name="name"><br>
+Country:<input type="text" name="country"><br>
 <input type="submit"><br>
 </form>
+
+<form action="getMemberById">
+ID:<input type="text" name="id"><br>
+<input type="submit"><br>
+</form>
+
 </body>
 </html>
